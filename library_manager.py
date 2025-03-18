@@ -122,16 +122,16 @@ def remove_book(index):
         return True
     return False
 
-# Search books
+# Search books (using .get() to avoid KeyError)
 def search_books(search_term, search_by):
     search_term = search_term.lower()
-    results = [book for book in st.session_state.library if search_term in book[search_by.lower()].lower()]
+    results = [book for book in st.session_state.library if search_term in book.get(search_by.lower(), "").lower()]
     st.session_state.search_results = results
 
-# Library statistics
+# Library statistics (using .get() for safe key access)
 def get_library_stats():
     total_books = len(st.session_state.library)
-    read_books = sum(1 for book in st.session_state.library if book['read_status'])
+    read_books = sum(1 for book in st.session_state.library if book.get('read_status', False))
     percent_read = (read_books / total_books * 100) if total_books > 0 else 0
 
     genres = {}
@@ -139,9 +139,17 @@ def get_library_stats():
     decades = {}
 
     for book in st.session_state.library:
-        genres[book['genre']] = genres.get(book['genre'], 0) + 1
-        authors[book['author']] = authors.get(book['author'], 0) + 1
-        decade = (book['publication_year'] // 10) * 10
+        genre = book.get("genre", "Unknown")
+        genres[genre] = genres.get(genre, 0) + 1
+
+        author = book.get("author", "Unknown")
+        authors[author] = authors.get(author, 0) + 1
+
+        pub_year = book.get("publication_year")
+        if pub_year:
+            decade = (pub_year // 10) * 10
+        else:
+            decade = "Unknown"
         decades[decade] = decades.get(decade, 0) + 1
 
     return {
@@ -192,7 +200,6 @@ if st.session_state.current_view == "add_book":
 
 elif st.session_state.current_view == "view_library":
     st.markdown("<h2 class='sub-header'>Your Library</h2>", unsafe_allow_html=True)
-    # Trigger balloons if a new book was added and then reset the flag.
     if st.session_state.book_added:
         st.balloons()
         st.session_state.book_added = False
@@ -202,17 +209,17 @@ elif st.session_state.current_view == "view_library":
         for index, book in enumerate(st.session_state.library):
             st.markdown(f"""
             <div class='book-card'>
-                <h3>{book['title']}</h3>
-                <p><strong>Author:</strong> {book['author']}</p>
-                <p><strong>Year:</strong> {book['publication_year']}</p>
-                <p><strong>Genre:</strong> {book['genre']}</p>
-                <p><strong>Read:</strong> {"Yes" if book['read_status'] else "No"}</p>
+                <h3>{book.get('title', 'N/A')}</h3>
+                <p><strong>Author:</strong> {book.get('author', 'N/A')}</p>
+                <p><strong>Year:</strong> {book.get('publication_year', 'N/A')}</p>
+                <p><strong>Genre:</strong> {book.get('genre', 'N/A')}</p>
+                <p><strong>Read:</strong> {"Yes" if book.get('read_status', False) else "No"}</p>
             </div>
             """, unsafe_allow_html=True)
             # Add a remove button for each book
             if st.button("Remove Book", key=f"remove_{index}"):
                 remove_book(index)
-                st.success(f"Removed book: {book['title']}")
+                st.success(f"Removed book: {book.get('title', 'N/A')}")
                 if hasattr(st, "experimental_rerun"):
                     st.experimental_rerun()
                 else:
@@ -228,11 +235,11 @@ elif st.session_state.current_view == "search_books":
         for book in st.session_state.search_results:
             st.markdown(f"""
             <div class='book-card'>
-                <h3>{book['title']}</h3>
-                <p><strong>Author:</strong> {book['author']}</p>
-                <p><strong>Year:</strong> {book['publication_year']}</p>
-                <p><strong>Genre:</strong> {book['genre']}</p>
-                <p><strong>Read:</strong> {"Yes" if book['read_status'] else "No"}</p>
+                <h3>{book.get('title', 'N/A')}</h3>
+                <p><strong>Author:</strong> {book.get('author', 'N/A')}</p>
+                <p><strong>Year:</strong> {book.get('publication_year', 'N/A')}</p>
+                <p><strong>Genre:</strong> {book.get('genre', 'N/A')}</p>
+                <p><strong>Read:</strong> {"Yes" if book.get('read_status', False) else "No"}</p>
             </div>
             """, unsafe_allow_html=True)
     else:
@@ -296,3 +303,4 @@ elif st.session_state.current_view == "library_statistics":
 
 st.markdown("---")
 st.markdown("© 2025 Raffay Personal Library Manager", unsafe_allow_html=True)
+
