@@ -128,7 +128,7 @@ def search_books(search_term, search_by):
     results = [book for book in st.session_state.library if search_term in book.get(search_by.lower(), "").lower()]
     st.session_state.search_results = results
 
-# Library statistics (using .get() for safe key access)
+# Library statistics (using .get() for safe key access and converting publication_year to int)
 def get_library_stats():
     total_books = len(st.session_state.library)
     read_books = sum(1 for book in st.session_state.library if book.get('read_status', False))
@@ -146,7 +146,11 @@ def get_library_stats():
         authors[author] = authors.get(author, 0) + 1
 
         pub_year = book.get("publication_year")
-        if pub_year:
+        try:
+            pub_year = int(pub_year)
+        except (ValueError, TypeError):
+            pub_year = None
+        if pub_year is not None:
             decade = (pub_year // 10) * 10
         else:
             decade = "Unknown"
@@ -303,4 +307,5 @@ elif st.session_state.current_view == "library_statistics":
 
 st.markdown("---")
 st.markdown("© 2025 Raffay Personal Library Manager", unsafe_allow_html=True)
+
 
